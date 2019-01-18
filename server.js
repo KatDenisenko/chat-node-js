@@ -26,12 +26,13 @@ mongoose.connect('mongodb://Admin:qwerty1@ds157064.mlab.com:57064/sandbox_go_it'
 app.use(cors());
 app.options('*',cors());
 //app.use('/api/messages/', messagesRoutes);
-app.get('/', (req, res) => {
-    messageSchem.find({}, (err,messages) => {
-        if (err) throw err;
-        res.json(messages)
-    })
-})
+
+// app.get('/', (req, res) => {
+//     messageSchem.find({}, (err,messages) => {
+//         if (err) throw err;
+//         res.json(messages)
+//     })
+// })
 
 
 
