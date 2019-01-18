@@ -20,11 +20,12 @@ mongoose.set('useFindAndModify', false);//флаги необходимые дл
 mongoose.set('useCreateIndex', true);//флаги необходимые для конкретной работы mongo db
 mongoose.connect('mongodb://Admin:qwerty1@ds157064.mlab.com:57064/sandbox_go_it');//подключаемся к бд
 
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(cors());
 app.options('*',cors());
+
 //app.use('/api/messages/', messagesRoutes);
 
 // app.get('/', (req, res) => {
