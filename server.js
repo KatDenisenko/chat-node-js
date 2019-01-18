@@ -27,9 +27,9 @@ app.use(cors());
 app.options('*',cors());
 //app.use('/api/messages/', messagesRoutes);
 app.get('/', (req, res) => {
-    messageSchem.find({}, (err,users) => {
+    messageSchem.find({}, (err,messages) => {
         if (err) throw err;
-        res.json(users)
+        res.json(messages)
     })
 })
 
