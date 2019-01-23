@@ -126,4 +126,6 @@ app.use((req, res, next) => {
       .status(500)
       .json({err: '500'});
   })
+
+  app.use(express.static('../frontend/build'));
 server.listen(PORT,()=>(console.log(`Сервер запущен на порту ${PORT}`))) 
