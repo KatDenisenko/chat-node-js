@@ -42,15 +42,21 @@ function checkAuth (client, next) {
 let online = 0;
 module.exports = io => {
 io.on('connection', (client) => {
-    
+    //client.join('general')
     let allMessages = messageSchem.find().sort({Addat: 1}).limit(10).lean();//избавляемся от лишней информации, которая к нам приходит
-
+    const allUsers = User.find();
             allMessages.exec(function(err,docs){//.sort('-time').limit(10).
                     if(err) throw err;
                     console.log('Send message from DB');
+
+                    //client.to('general').emit("All-message", docs, 'general');
                     client.emit("All-message", docs);
                     console.log(docs);
                     console.log('Messages from DB');
+             })
+             allUsers.exec(function(err,users){
+                 if(err) throw err;
+                 client.emit("All-users", users);
              })
     
     console.log(++online);
@@ -58,13 +64,17 @@ io.on('connection', (client) => {
    
     client.on('register',async(user) => {
         try {
-            let userDB = await User.findOne({username: {$regex: _.escapeRegExp(user.username), $options: "i"}}).lean().exec();
-            if(userDB != void(0)) message = {message: "User already exist"};
+            let userDB = await User.findOne({email: user.email}).lean().exec();
+            if(userDB != void(0)) {message = {message: "User already exist"};
+                }
+            else
 
-            userDB = await User.create({
+           { userDB = await User.create({
                 username: user.username,
-                password: user.password
+                password: user.password,
+                email: user.email,
             });
+        
 
             const token = createToken({id: userDB._id, username: userDB.username});
 
@@ -72,8 +82,9 @@ io.on('connection', (client) => {
             //     httpOnly: true
             // });
 
-            message = {message: "User created."};
-            client.emit('register-on-DB', message);
+            message = {message: "User created.", currentUser: userDB};
+        }
+        client.emit('register-on-DB', message);
         } catch (e) {
             console.error("E, register,", e);
             message = {message: "some error"};
@@ -83,19 +94,27 @@ io.on('connection', (client) => {
 
     client.on('login', async(user) => {
         try {
-            let userDb = await User.findOne({username: user.username}).lean().exec();
+            let userDb = await User.findOne({email: user.email}).lean().exec();
             if(userDb!= void(0) && bcrypt.compareSync(user.password, userDb.password)) {
-                const token = createToken({id: userDb._id, username: userDb.username});
+                const token = createToken({id: userDb._id, email: userDb.email});
                 // res.cookie('token', token, {
                 //     httpOnly: true
                 // });
 
                 // res.status(200).send(
-                    message = {message: "User login success."};
+                    message = {message: "User login success", currentUser: userDb};
                     client.emit('login-done',message);
-            } else 
-            message = {message: "User not exist or password not correct."};
+            } else {
+                if (userDb === void(0)) {
+                    message = {message: "User not exist"}
                     client.emit('login-done',message);
+                } else {
+                 if ((userDb !== void(0) && !bcrypt.compareSync(user.password, userDb.password))) {
+                    message = {message: "Password not correct."};
+                    client.emit('login-done',message);
+                }
+            }
+            }
             
         } catch (e) {
             console.error("E, login,", e);
