@@ -38,81 +38,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors());
 app.options('*',cors());
 
-// require('./routs/routs')(app);
 require('./sockets')(io);
-//app.use('/api/messages/', messagesRoutes);
-
-
-// app.get('/', (req, res) => {
-//     messageSchem.find({}, (err,users) => {
-//         if (err) throw err;
-//         res.json(users)
-//     })
-// })
-
-
-
-//let online = 0;
-
-
-// let online = 0;
-// io.on('connection', (client) => {
-    
-//     let allMessages = messageSchem.find().sort({Addat: 1}).limit(10).lean();//избавляемся от лишней информации, которая к нам приходит
-
-//             allMessages.exec(function(err,docs){//.sort('-time').limit(10).
-//                     if(err) throw err;
-//                     console.log('Send message from DB');
-//                     client.emit("All-message", docs);
-//                     console.log(docs);
-//                     console.log('Messages from DB');
-//              })
-    
-//     console.log(++online);
-//     client.broadcast.emit("change-online", online);
-   
-//     client.on("disconnect", () => {
-//         console.log(--online);
-//         client.broadcast.emit("change-online", online);
-//     });
-//     client.on("message", (message) => {
-//         messageSchem.create(message, err => {
-//             if(err) return console.error(err);
-//             client.broadcast.emit("new-message", message);
-//         })
-//     });
-//     client.on("deletMessage", (messageId) => {
-//         messageSchem.findOneAndDelete({messId:messageId}, err=> {
-//             if (err) throw err;
-//             console.log('message delete')
-//             client.broadcast.emit("messageWasDeleted", messageId);
-//         })
-//     });
-
-//     client.on("user-online", (userName)=>{
-//         client.broadcast.emit("userAddedOnline", userName)
-//     })
-
-//     client.on("editMessage", (id, editMess) => {
-//         messageSchem.findOneAndUpdate({messId: id}, editMess, err => {
-//             if (err) throw err
-//             console.log('Message succsessfully edit!')
-//             client.broadcast.emit("message-was-edited", editMess);
-//         })
-//     })
-
-
-    
-  
-//     // client.on("All-message", (is) => {
-//     //    //let allMessages = messageSchem.find();
-//     //  //client.broadcast.emit("All-message", allMessages);
-//     // })
-    
-//     client.on("typing", (is) => {
-//         client.broadcast.emit("somebody-typing", is);
-//     })
-// });
 
 app.use((req, res, next) => {
     res
@@ -127,5 +53,5 @@ app.use((req, res, next) => {
       .json({err: '500'});
   })
 
-  app.use(express.static('../frontend/build'));
+  app.use(express.static(__dirname + '../frontend/build'));
 server.listen(PORT,()=>(console.log(`Сервер запущен на порту ${PORT}`))) 
