@@ -10,7 +10,7 @@ let messageSchema = new Schema({
 },
 {
     versionKey:false,
-    collation: "MessageCollection"
+    collaction: "Message"
 });
 
 let Message = mongoose.model('Message', messageSchema);

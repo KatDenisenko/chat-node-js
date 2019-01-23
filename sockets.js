@@ -7,20 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('./config');
 
-// function auth (socket, next) {
-//     // Parse cookie
-//     cookieParser()(socket.request, socket.request.res, () => {});
 
-//     // JWT authenticate
-//     passport.authenticate('jwt', {session: false}, function (error, decryptToken, jwtError) {
-//         if(!error && !jwtError && decryptToken) {
-//             next(false, {username: decryptToken.username, id: decryptToken.id});
-//         } else {
-//             next('guest');
-//         }
-//     })(socket.request, socket.request.res);
-
-// }
 function createToken (body) {
     return jwt.sign(
         body,
@@ -40,6 +27,7 @@ function checkAuth (client, next) {
 
 
 let online = 0;
+
 module.exports = io => {
 io.on('connection', (client) => {
     //client.join('general')
@@ -152,15 +140,7 @@ io.on('connection', (client) => {
             client.broadcast.emit("message-was-edited", editMess);
         })
     })
-
-
-    
-  
-    // client.on("All-message", (is) => {
-    //    //let allMessages = messageSchem.find();
-    //  //client.broadcast.emit("All-message", allMessages);
-    // })
-    
+ 
     client.on("typing", (is) => {
         client.broadcast.emit("somebody-typing", is);
     })
