@@ -10,13 +10,10 @@ const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const {Strategy} = require('passport-jwt');
 const {jwt} = require('./config');
-const messageSchem = require('./models/messageSchema')
 const io = require("socket.io")(server, {
    path: '/chat/',
    origins: "*:*"
 });
-
-
 
 mongoose.Promise = global.Promise;//заменяем промисы mongoose на промисы js Promise
 mongoose.set('useNewUrlParser', true);//флаги необходимые для конкретной работы mongo db
@@ -40,18 +37,5 @@ app.options('*',cors());
 
 require('./sockets')(io);
 
-app.use((req, res, next) => {
-    res
-      .status(404)
-      .json({err: '404'});
-  });
-  
-  app.use((err, req, res, next) => {
-    console.log(err.stack);
-    res
-      .status(500)
-      .json({err: '500'});
-  })
-
-  app.use(express.static(__dirname + './frontend/build'));
-server.listen(PORT,()=>(console.log(`Сервер запущен на порту ${PORT}`))) 
+app.use(express.static('./frontend/build'));
+server.listen(PORT,()=>(console.log(`Сервер запущен на порту ${PORT}`)));
