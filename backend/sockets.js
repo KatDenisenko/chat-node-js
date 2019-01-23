@@ -1,0 +1,149 @@
+const messageSchem = require('./models/messageSchema');
+const User = require('./models/userSchema')
+const cookieParser = require('cookie-parser');
+const passport = require('passport');
+const _=require('lodash');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const config = require('./config');
+
+// function auth (socket, next) {
+//     // Parse cookie
+//     cookieParser()(socket.request, socket.request.res, () => {});
+
+//     // JWT authenticate
+//     passport.authenticate('jwt', {session: false}, function (error, decryptToken, jwtError) {
+//         if(!error && !jwtError && decryptToken) {
+//             next(false, {username: decryptToken.username, id: decryptToken.id});
+//         } else {
+//             next('guest');
+//         }
+//     })(socket.request, socket.request.res);
+
+// }
+function createToken (body) {
+    return jwt.sign(
+        body,
+        config.jwt.secretOrKey,
+        {expiresIn: config.expiresIn}
+    );
+}
+
+function checkAuth (client, next) {
+    passport.authenticate('jwt', { session: false }, (err, decryptToken, jwtError) => {
+        if(jwtError != void(0) || err != void(0))
+         return 'Some error!';
+        client.user = decryptToken;
+        next();
+    })(client, next);
+}
+
+
+let online = 0;
+module.exports = io => {
+io.on('connection', (client) => {
+    
+    let allMessages = messageSchem.find().sort({Addat: 1}).limit(10).lean();//избавляемся от лишней информации, которая к нам приходит
+
+            allMessages.exec(function(err,docs){//.sort('-time').limit(10).
+                    if(err) throw err;
+                    console.log('Send message from DB');
+                    client.emit("All-message", docs);
+                    console.log(docs);
+                    console.log('Messages from DB');
+             })
+    
+    console.log(++online);
+    client.broadcast.emit("change-online", online);
+   
+    client.on('register',async(user) => {
+        try {
+            let userDB = await User.findOne({username: {$regex: _.escapeRegExp(user.username), $options: "i"}}).lean().exec();
+            if(userDB != void(0)) message = {message: "User already exist"};
+
+            userDB = await User.create({
+                username: user.username,
+                password: user.password
+            });
+
+            const token = createToken({id: userDB._id, username: userDB.username});
+
+            // client.cookie('token', token, {
+            //     httpOnly: true
+            // });
+
+            message = {message: "User created."};
+            client.emit('register-on-DB', message);
+        } catch (e) {
+            console.error("E, register,", e);
+            message = {message: "some error"};
+            client.emit('register-on-DB', message);
+        }
+    });
+
+    client.on('login', async(user) => {
+        try {
+            let userDb = await User.findOne({username: user.username}).lean().exec();
+            if(userDb!= void(0) && bcrypt.compareSync(user.password, userDb.password)) {
+                const token = createToken({id: userDb._id, username: userDb.username});
+                // res.cookie('token', token, {
+                //     httpOnly: true
+                // });
+
+                // res.status(200).send(
+                    message = {message: "User login success."};
+                    client.emit('login-done',message);
+            } else 
+            message = {message: "User not exist or password not correct."};
+                    client.emit('login-done',message);
+            
+        } catch (e) {
+            console.error("E, login,", e);
+            message = {message: "Some error in login"};
+                    client.emit('login-done',message);
+        }
+    });
+
+    client.on("disconnect", () => {
+        console.log(--online);
+        client.broadcast.emit("change-online", online);
+    });
+    client.on("message", (message) => {
+        messageSchem.create(message, err => {
+            if(err) return console.error(err);
+            client.broadcast.emit("new-message", message);
+        })
+    });
+    client.on("deletMessage", (messageId) => {
+        messageSchem.findOneAndDelete({messId:messageId}, err=> {
+            if (err) throw err;
+            console.log('message delete')
+            client.broadcast.emit("messageWasDeleted", messageId);
+        })
+    });
+
+    client.on("user-online", (userName)=>{
+        client.broadcast.emit("userAddedOnline", userName)
+    })
+
+    client.on("editMessage", (id, editMess) => {
+        messageSchem.findOneAndUpdate({messId: id}, editMess, err => {
+            if (err) throw err
+            console.log('Message succsessfully edit!')
+            client.broadcast.emit("message-was-edited", editMess);
+        })
+    })
+
+
+    
+  
+    // client.on("All-message", (is) => {
+    //    //let allMessages = messageSchem.find();
+    //  //client.broadcast.emit("All-message", allMessages);
+    // })
+    
+    client.on("typing", (is) => {
+        client.broadcast.emit("somebody-typing", is);
+    })
+});
+}
